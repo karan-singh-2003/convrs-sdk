@@ -21,7 +21,7 @@ const DEFAULT_API_URL = "http://localhost:3000/api/track";
 const STORAGE_KEYS = {
   VISITOR_ID: "_atk_vid",
   SESSION_ID: "_atk_sid",
-  SESSION_START: "datafast_session_start",
+  SESSION_START: "_atk_start",
   IGNORE_TRACKING: "datafast_ignore",
 };
 

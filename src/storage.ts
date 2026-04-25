@@ -3,7 +3,7 @@ import { getCookie, setCookie, deleteCookie } from "./cookies";
 
 const SESSION_KEY = "_atk_sid";
 const VISITOR_KEY = "_atk_vid";
-const SESSION_START_KEY = "_atk_sstart";
+const SESSION_START_KEY = "_atk_start";
 
 // cookie TTL (days)
 const COOKIE_KEYS: Record<string, number> = {

@@ -122,11 +122,11 @@ async function initDataFast(config: any) {
   if (crossDomain.vid || crossDomain.sid) {
     if (!cookieless) {
       if (crossDomain.vid) {
-        setCookie("datafast_visitor_id", crossDomain.vid, 365, domain);
+        setCookie("_atk_vid", crossDomain.vid, 365, domain);
       }
       if (crossDomain.sid) {
-        setCookie("datafast_session_id", crossDomain.sid, 1 / 48, domain);
-        setCookie("datafast_session_start", Date.now().toString(), 1 / 48, domain);
+        setCookie("_atk_sid", crossDomain.sid, 1 / 48, domain);
+        setCookie("_atk_start", Date.now().toString(), 1 / 48, domain);
       }
     }
     cleanCrossDomainParams();
@@ -167,6 +167,24 @@ async function initDataFast(config: any) {
       }
     } : void 0)
   });
+  client.setDeviceInfo(deviceInfo);  
+  // ── Rolling session refresh ──────────────────────────────────────────────
+if (!cookieless) {
+  const SESSION_TTL_DAYS = 1 / 48; // 30 min
+  
+ const rollSession = () => {
+  const sid = client.getSessionId();
+  if (!sid) return;
+  const now = Date.now();
+  setCookie("_atk_sid",   sid,             1 / 48, domain);
+  setCookie("_atk_start", now.toString(),  1 / 48, domain);  // ← keep start fresh too
+};
+
+  // Refresh the cookie TTL on any user activity
+  ["click", "keydown", "scroll", "touchstart"].forEach((evt) => {
+    window.addEventListener(evt, rollSession, { passive: true });
+  });
+};
   client.setDeviceInfo(deviceInfo);
   onViewportChange((viewport) => {
     client.setDeviceInfo({
