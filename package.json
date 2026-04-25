@@ -1,0 +1,32 @@
+{
+  "name": "@karanbuilds/analytics-sdk",
+  "version": "1.0.2",
+  "description": "Analytics SDK (Web)",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.1",
+    "typescript": "^5.0.0",
+    "@types/node": "^25.5.1"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
