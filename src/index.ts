@@ -87,26 +87,31 @@ function readCrossDomainParams() {
   try {
     const url = new URL(window.location.href);
     return {
-      vid: url.searchParams.get("_df_vid"),
-      sid: url.searchParams.get("_df_sid"),
-      start: url.searchParams.get("_df_start"), // ✅ ADD
+      vid:   url.searchParams.get("_df_vid"),
+      sid:   url.searchParams.get("_df_sid"),
+      start: url.searchParams.get("_df_start"), // ← original session start timestamp
     };
   } catch {
     return { vid: null, sid: null, start: null };
   }
 }
-
+ 
 function cleanCrossDomainParams() {
   try {
     const url = new URL(window.location.href);
-    if (url.searchParams.has("_df_vid") || url.searchParams.has("_df_sid")) {
+    if (
+      url.searchParams.has("_df_vid") ||
+      url.searchParams.has("_df_sid") ||
+      url.searchParams.has("_df_start")  // ← also clean _df_start
+    ) {
       url.searchParams.delete("_df_vid");
       url.searchParams.delete("_df_sid");
+      url.searchParams.delete("_df_start");
       window.history.replaceState({}, "", url.toString());
     }
-  } catch {
-  }
+  } catch {}
 }
+
 async function initDataFast(config: any) {
   const debug = config.debug ?? false;
   if (isLikelyBot()) {
