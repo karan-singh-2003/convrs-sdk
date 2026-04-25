@@ -108,7 +108,7 @@ function cleanCrossDomainParams() {
   } catch {
   }
 }
-async function initDataFast(config: any) {
+export async function initDataFast(config: any) {
   const debug = config.debug ?? false;
   if (isLikelyBot()) {
     return createNoopClient("bot detected", debug);
