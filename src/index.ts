@@ -88,12 +88,14 @@ function readCrossDomainParams() {
     const url = new URL(window.location.href);
     return {
       vid: url.searchParams.get("_df_vid"),
-      sid: url.searchParams.get("_df_sid")
+      sid: url.searchParams.get("_df_sid"),
+      start: url.searchParams.get("_df_start"), // ✅ ADD
     };
   } catch {
-    return { vid: null, sid: null };
+    return { vid: null, sid: null, start: null };
   }
 }
+
 function cleanCrossDomainParams() {
   try {
     const url = new URL(window.location.href);
@@ -125,9 +127,15 @@ async function initDataFast(config: any) {
         setCookie("_atk_vid", crossDomain.vid, 365, domain);
       }
       if (crossDomain.sid) {
-        setCookie("_atk_sid", crossDomain.sid, 1 / 48, domain);
-        setCookie("_atk_start", Date.now().toString(), 1 / 48, domain);
-      }
+  setCookie("_atk_sid", crossDomain.sid, 2 / 24, domain);
+
+  setCookie(
+    "_atk_start",
+    crossDomain.start ?? Date.now().toString(), //  use original start if exists
+    2 / 24,
+    domain
+  );
+}
     }
     cleanCrossDomainParams();
   }
