@@ -114,120 +114,120 @@ function cleanCrossDomainParams() {
 
 async function initDataFast(config: any) {
   const debug = config.debug ?? false;
-  if (isLikelyBot()) {
-    return createNoopClient("bot detected", debug);
-  }
-  if (isInIframe() && !config.allowIframe) {
-    return createNoopClient("inside an iframe", debug);
-  }
-  if ((isLocalhostHostname(typeof window !== "undefined" ? window.location.hostname : "") || isFileProtocol()) && !config.allowLocalhost) {
-    return createNoopClient("localhost or file:// protocol", debug);
-  }
-  const domain = config.domain ?? (typeof window !== "undefined" ? window.location.hostname : "unknown");
-  const cookieless = config.cookieless ?? false;
-  const crossDomain = readCrossDomainParams();
-  if (crossDomain.vid || crossDomain.sid) {
-    if (!cookieless) {
-      if (crossDomain.vid) {
-        setCookie("_atk_vid", crossDomain.vid, 365, domain);
-      }
-      if (crossDomain.sid) {
-  setCookie("_atk_sid", crossDomain.sid, 2 / 24, domain);
+  if (isLikelyBot()) return createNoopClient("bot detected", debug);
+  if (isInIframe() && !config.allowIframe) return createNoopClient("inside an iframe", debug);
+  if (
+    (isLocalhostHostname(typeof window !== "undefined" ? window.location.hostname : "") || isFileProtocol()) &&
+    !config.allowLocalhost
+  ) return createNoopClient("localhost or file:// protocol", debug);
 
-  setCookie(
-    "_atk_start",
-    crossDomain.start ?? Date.now().toString(), //  use original start if exists
-    2 / 24,
-    domain
-  );
-}
+  const domain = config.domain ?? (typeof window !== "undefined" ? window.location.host : "unknown");
+  const cookieDomain = domain.split(":")[0]; // strip port — cookies don't support ports
+  const cookieless = config.cookieless ?? false;
+  const SESSION_TTL_DAYS = 2 / 24; // 2 hours — survives Stripe checkout
+
+  // ── Restore cross-domain session BEFORE storage/init ─────────────────────
+  const crossDomain = readCrossDomainParams();
+  const hasCrossDomainParams = !!(crossDomain.vid || crossDomain.sid);
+
+  if (hasCrossDomainParams && !cookieless) {
+    if (crossDomain.vid) {
+      setCookie("_atk_vid", crossDomain.vid, 365, cookieDomain);
+    }
+    if (crossDomain.sid) {
+      setCookie("_atk_sid",   crossDomain.sid,                           SESSION_TTL_DAYS, cookieDomain);
+      setCookie("_atk_start", crossDomain.start ?? Date.now().toString(), SESSION_TTL_DAYS, cookieDomain);
     }
     cleanCrossDomainParams();
   }
+
+  // ── Storage adapter — created AFTER cookie restore ────────────────────────
   let storage;
   try {
     localStorage.setItem("__datafast_test__", "test");
     localStorage.removeItem("__datafast_test__");
-    storage = cookieless ? createCookielessWebStorageAdapter(domain) : createHybridStorageAdapter(domain);
+    storage = cookieless ? createCookielessWebStorageAdapter(cookieDomain) : createHybridStorageAdapter(cookieDomain);
   } catch {
     console.warn("[DataFast] localStorage not available, using in-memory storage");
     storage = createMemoryStorageAdapter();
   }
+
   const network = createFetchNetworkAdapter();
   const deviceInfo = getDeviceInfo();
-  const client = getDataFastClient();
+
+  // Use fresh client when cross-domain params present so initSessionId()
+  // runs fresh and reads the restored cookies instead of cached in-memory state
+  const client = hasCrossDomainParams
+    ? createDataFastClient()
+    : getDataFastClient();
+
   await client.init({
-    appId: config.websiteId,
+    appId:        config.websiteId,
     domain,
     storage,
     network,
-    platform: "web",
-    apiUrl: config.apiUrl,
+    platform:     "web",
+    apiUrl:       config.apiUrl,
     debug,
-    flushInterval: config.flushInterval ?? 5e3,
-    maxQueueSize: config.maxQueueSize ?? 10,
+    flushInterval: config.flushInterval ?? 5000,
+    maxQueueSize:  config.maxQueueSize  ?? 10,
     cookieless,
-    onCookielessVisitorId: config.onCookielessVisitorId ?? (cookieless ? (vid: string) => {
-      try {
-        const w = window as any;
-        w.datafast = w.datafast ?? {};
-        if (vid) {
-          w.datafast.visitorId = vid;
-        } else {
-          delete w.datafast.visitorId;
-        }
-      } catch {
-      }
-    } : void 0)
+    onCookielessVisitorId:
+      config.onCookielessVisitorId ??
+      (cookieless
+        ? (vid: string) => {
+            try {
+              const w = window as any;
+              w.datafast = w.datafast ?? {};
+              if (vid) w.datafast.visitorId = vid;
+              else delete w.datafast.visitorId;
+            } catch {}
+          }
+        : undefined),
   });
-  client.setDeviceInfo(deviceInfo);  
-  // ── Rolling session refresh ──────────────────────────────────────────────
-if (!cookieless) {
-  const SESSION_TTL_DAYS = 1 / 48; // 30 min
-  
- const rollSession = () => {
-  const sid = client.getSessionId();
-  if (!sid) return;
-  const now = Date.now();
-  setCookie("_atk_sid",   sid,             1 / 48, domain);
-  setCookie("_atk_start", now.toString(),  1 / 48, domain);  // ← keep start fresh too
-};
 
-  // Refresh the cookie TTL on any user activity
-  ["click", "keydown", "scroll", "touchstart"].forEach((evt) => {
-    window.addEventListener(evt, rollSession, { passive: true });
-  });
-};
-  client.setDeviceInfo(deviceInfo);
+  client.setDeviceInfo(deviceInfo); // ← called ONCE
+
   onViewportChange((viewport) => {
-    client.setDeviceInfo({
-      ...deviceInfo,
-      viewport
-    });
+    client.setDeviceInfo({ ...deviceInfo, viewport });
   });
+
+  // ── Rolling session refresh ───────────────────────────────────────────────
+  if (!cookieless) {
+    const rollSession = () => {
+      const sid = client.getSessionId();
+      if (!sid) return;
+      const now = Date.now();
+      setCookie("_atk_sid",   sid,             SESSION_TTL_DAYS, cookieDomain); // 2h not 30min
+      setCookie("_atk_start", now.toString(),  SESSION_TTL_DAYS, cookieDomain);
+    };
+    ["click", "keydown", "scroll", "touchstart"].forEach((evt) =>
+      window.addEventListener(evt, rollSession, { passive: true })
+    );
+  }
+
   const webClient: any = client;
+
   webClient.trackPageview = async (path?: string) => {
     if (path) {
       await client.trackScreen(path);
     } else {
-      const href = typeof window !== "undefined" ? window.location.href : void 0;
+      const href     = typeof window !== "undefined" ? window.location.href : undefined;
       const pagePath = typeof window !== "undefined" ? window.location.pathname : "/";
       await client.trackScreen(pagePath, { href });
     }
   };
+
   webClient.getTrackingParams = (): { _df_vid: string; _df_sid: string } => {
-    if (client.isCookieless()) {
-      return { _df_vid: "", _df_sid: "" };
-    }
+    if (client.isCookieless()) return { _df_vid: "", _df_sid: "" };
     return {
       _df_vid: client.getVisitorId() ?? "",
-      _df_sid: client.getSessionId() ?? ""
+      _df_sid: client.getSessionId() ?? "",
     };
   };
+
   webClient.buildCrossDomainUrl = (url: string): string => {
-    if (client.isCookieless()) {
-      return url;
-    }
+    if (client.isCookieless()) return url;
     try {
       const urlObj = new URL(url);
       const vid = client.getVisitorId();
@@ -239,14 +239,17 @@ if (!cookieless) {
       return url;
     }
   };
+
   const autoCaptureConfig = resolveAutoCapturePageviewsConfig(config.autoCapturePageviews);
   if (autoCaptureConfig.enabled) {
     setupAutoPageviewCapture(webClient, autoCaptureConfig);
   } else if (teardownAutoPageviewCapture) {
     teardownAutoPageviewCapture();
   }
+
   return webClient;
 }
+
 async function createDataFastWithAdapters(config: any) {
   const client = createDataFastClient();
   await client.init(config);

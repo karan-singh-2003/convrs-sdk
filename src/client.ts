@@ -425,7 +425,22 @@ export class DataFastClient {
     this.state.config.onCookielessVisitorId?.(vid);
     this.logger.log("Cookieless visitor id from server", vid);
   }
-
+// src/core/client.ts — add this public method
+async reloadSession() {
+  if (!this.state.config) return;
+  // Re-reads visitor and session from storage (cookies already updated externally)
+  // Does NOT generate new IDs — just syncs in-memory state from storage
+  await this.initVisitorId();
+  await this.initSessionId();
+  // Reset page dedup so /success pageview isn't throttled
+  this.state.lastScreenName = null;
+  this.state.lastPageviewUrl = null;
+  this.state.lastPageviewTime = null;
+  this.logger.log("Session reloaded from storage:", {
+    visitorId: this.state.visitorId,
+    sessionId: this.state.sessionId,
+  });
+}
   private buildBasePayload(type: string, screenName: string, hrefOverride?: string): any {
     const config = this.state.config;
     const deviceInfo = this.state.deviceInfo;
@@ -475,3 +490,4 @@ export function getDataFastClient(): DataFastClient {
 export function createDataFastClient(): DataFastClient {
   return new DataFastClient();
 }
+
