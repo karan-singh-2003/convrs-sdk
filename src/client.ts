@@ -16,7 +16,7 @@ import {
 } from "./utils";
 
 const SDK_VERSION = "1.0.0";
-const DEFAULT_API_URL = "https://datafa.st/api/events";
+const DEFAULT_API_URL = "http://localhost:3000/api/track";
 
 const STORAGE_KEYS = {
   VISITOR_ID: "_atk_vid",
