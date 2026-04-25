@@ -1,10 +1,15 @@
 // src/web/storage.ts
 import { getCookie, setCookie, deleteCookie } from "./cookies";
 
+const SESSION_KEY = "_atk_sid";
+const VISITOR_KEY = "_atk_vid";
+const SESSION_START_KEY = "_atk_sstart";
+
+// cookie TTL (days)
 const COOKIE_KEYS: Record<string, number> = {
-  datafast_visitor_id: 365,
-  datafast_session_id: 1 / 48,
-  datafast_session_start: 1 / 48,
+  [VISITOR_KEY]: 365,
+  [SESSION_KEY]: 1 / 48,        // 30 minutes
+  [SESSION_START_KEY]: 1 / 48,  // 30 minutes
 };
 
 function isCookieKey(key: string): boolean {
@@ -12,9 +17,9 @@ function isCookieKey(key: string): boolean {
 }
 
 const COOKIELESS_SESSION_KEYS: Record<string, boolean> = {
-  datafast_visitor_id: true,
-  datafast_session_id: true,
-  datafast_session_start: true,
+  [VISITOR_KEY]: true,
+  [SESSION_KEY]: true,
+  [SESSION_START_KEY]: true,
 };
 
 function isCookielessSessionKey(key: string): boolean {

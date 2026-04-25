@@ -19,8 +19,8 @@ const SDK_VERSION = "1.0.0";
 const DEFAULT_API_URL = "https://datafa.st/api/events";
 
 const STORAGE_KEYS = {
-  VISITOR_ID: "datafast_visitor_id",
-  SESSION_ID: "datafast_session_id",
+  VISITOR_ID: "_atk_vid",
+  SESSION_ID: "_atk_sid",
   SESSION_START: "datafast_session_start",
   IGNORE_TRACKING: "datafast_ignore",
 };
