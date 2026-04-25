@@ -1,6 +1,6 @@
 {
   "name": "@karanbuilds/analytics-sdk",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Analytics SDK (Web)",
   "exports": {
     ".": {
