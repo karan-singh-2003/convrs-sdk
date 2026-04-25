@@ -1,6 +1,6 @@
 
 // src/web/bot.ts
-function isLikelyBot(): boolean {
+export function isLikelyBot(): boolean {
   if (typeof window === "undefined" || typeof navigator === "undefined") return true;
   try {
     const nav = window.navigator;
@@ -59,7 +59,7 @@ function isLikelyBot(): boolean {
   }
   return false;
 }
-function isInIframe(): boolean {
+export function isInIframe(): boolean {
   if (typeof window === "undefined") return false;
   try {
     return window !== window.parent;
@@ -67,7 +67,7 @@ function isInIframe(): boolean {
     return true;
   }
 }
-function isLocalhostHostname(hostname?: string): boolean {
+export function isLocalhostHostname(hostname?: string): boolean {
   const h = (hostname ?? (typeof window !== "undefined" ? window.location.hostname : "")).toLowerCase();
   if (!h) return false;
   if (["localhost", "127.0.0.1", "::1"].includes(h)) return true;
@@ -76,7 +76,7 @@ function isLocalhostHostname(hostname?: string): boolean {
   if (h.endsWith(".local") || h.endsWith(".localhost")) return true;
   return false;
 }
-function isFileProtocol(): boolean {
+export function isFileProtocol(): boolean {
   if (typeof window === "undefined") return false;
   return window.location.protocol === "file:";
 }

@@ -1,24 +1,27 @@
-
 // src/web/storage.ts
-var COOKIE_KEYS = {
+import { getCookie, setCookie, deleteCookie } from "./cookies";
+
+const COOKIE_KEYS: Record<string, number> = {
   datafast_visitor_id: 365,
   datafast_session_id: 1 / 48,
-  // 30 minutes
-  datafast_session_start: 1 / 48
-  // 30 minutes
+  datafast_session_start: 1 / 48,
 };
-function isCookieKey(key: string) {
+
+function isCookieKey(key: string): boolean {
   return key in COOKIE_KEYS;
 }
-var COOKIELESS_SESSION_KEYS = {
+
+const COOKIELESS_SESSION_KEYS: Record<string, boolean> = {
   datafast_visitor_id: true,
   datafast_session_id: true,
-  datafast_session_start: true
+  datafast_session_start: true,
 };
-function isCookielessSessionKey(key: string) {
+
+function isCookielessSessionKey(key: string): boolean {
   return key in COOKIELESS_SESSION_KEYS;
 }
-function createLocalStorageAdapter() {
+
+export function createLocalStorageAdapter() {
   return {
     async getItem(key: string) {
       try {
@@ -41,11 +44,12 @@ function createLocalStorageAdapter() {
       } catch (error) {
         console.warn("[DataFast] localStorage.removeItem failed:", error);
       }
-    }
+    },
   };
 }
-function createMemoryStorageAdapter() {
-  const storage = /* @__PURE__ */ new Map();
+
+export function createMemoryStorageAdapter() {
+  const storage = new Map<string, string>();
   return {
     async getItem(key: string) {
       return storage.get(key) ?? null;
@@ -55,20 +59,22 @@ function createMemoryStorageAdapter() {
     },
     async removeItem(key: string) {
       storage.delete(key);
-    }
+    },
   };
 }
-function createCookielessWebStorageAdapter(_domain: string) {
+
+export function createCookielessWebStorageAdapter(_domain?: string) {
   const localAdapter = createLocalStorageAdapter();
-  const memorySession = /* @__PURE__ */ new Map();
-  function sessionGet(key: string) {
+  const memorySession = new Map<string, string>();
+
+  function sessionGet(key: string): string | null {
     try {
       const v = sessionStorage.getItem(key);
       if (v) return v;
-    } catch {
-    }
+    } catch {}
     return memorySession.get(key) ?? null;
   }
+
   function sessionSet(key: string, value: string) {
     try {
       sessionStorage.setItem(key, value);
@@ -77,13 +83,14 @@ function createCookielessWebStorageAdapter(_domain: string) {
       memorySession.set(key, value);
     }
   }
+
   function sessionRemove(key: string) {
     try {
       sessionStorage.removeItem(key);
-    } catch {
-    }
+    } catch {}
     memorySession.delete(key);
   }
+
   return {
     async getItem(key: string) {
       if (isCookielessSessionKey(key)) {
@@ -106,23 +113,23 @@ function createCookielessWebStorageAdapter(_domain: string) {
         return;
       }
       return localAdapter.removeItem(key);
-    }
+    },
   };
 }
-function createHybridStorageAdapter(domain: string) {
+
+export function createHybridStorageAdapter(domain: string) {
   const localAdapter = createLocalStorageAdapter();
+
   return {
     async getItem(key: string) {
       if (isCookieKey(key)) {
         const cookieVal = getCookie(key);
         if (cookieVal) return cookieVal;
+
         const localVal = await localAdapter.getItem(key);
         if (localVal) {
-          setCookie(key, localVal, (COOKIE_KEYS as any)[key], domain);
-          try {
-            localStorage.removeItem(key);
-          } catch {
-          }
+          setCookie(key, localVal, COOKIE_KEYS[key], domain);
+          try { localStorage.removeItem(key); } catch {}
         }
         return localVal;
       }
@@ -130,11 +137,8 @@ function createHybridStorageAdapter(domain: string) {
     },
     async setItem(key: string, value: string) {
       if (isCookieKey(key)) {
-        setCookie(key, value, (COOKIE_KEYS as any)[key], domain);
-        try {
-          localStorage.removeItem(key);
-        } catch {
-        }
+        setCookie(key, value, COOKIE_KEYS[key], domain);
+        try { localStorage.removeItem(key); } catch {}
         return;
       }
       return localAdapter.setItem(key, value);
@@ -142,13 +146,10 @@ function createHybridStorageAdapter(domain: string) {
     async removeItem(key: string) {
       if (isCookieKey(key)) {
         deleteCookie(key, domain);
-        try {
-          localStorage.removeItem(key);
-        } catch {
-        }
+        try { localStorage.removeItem(key); } catch {}
         return;
       }
       return localAdapter.removeItem(key);
-    }
+    },
   };
 }

@@ -1,6 +1,6 @@
 // src/web/noop.ts
 const noop = async (): Promise<void> => {};
-function createNoopClient(reason: string, debug?: boolean) {
+export function createNoopClient(reason: string, debug?: boolean) {
   if (debug) {
     console.warn(`[DataFast] Tracking disabled: ${reason}`);
   }

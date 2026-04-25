@@ -1,5 +1,6 @@
+import { isLocalhostHostname } from "./bot";
 // src/web/cookies.ts
-function setCookie(name: string, value: string, days?: number, domain?: string) {
+export function setCookie(name: string, value: string, days?: number, domain?: string) {
   let expires = "";
   if (days) {
     const date = /* @__PURE__ */ new Date();
@@ -18,7 +19,7 @@ function setCookie(name: string, value: string, days?: number, domain?: string) 
   }
   document.cookie = cookieStr;
 }
-function getCookie(name: string): string | null {
+export function getCookie(name: string): string | null {
   const nameEQ = name + "=";
   const cookies = document.cookie.split(";");
   for (let i = 0; i < cookies.length; i++) {
@@ -30,6 +31,6 @@ function getCookie(name: string): string | null {
   }
   return null;
 }
-function deleteCookie(name: string, domain?: string): void {
+export function deleteCookie(name: string, domain?: string): void {
   setCookie(name, "", -1, domain);
 }

@@ -1,6 +1,6 @@
 
 // src/web/device.ts
-function getDeviceInfo() {
+export function getDeviceInfo() {
   const getViewport = () => {
     if (typeof window === "undefined") return { width: 0, height: 0 };
     return {
@@ -44,7 +44,7 @@ function getDeviceInfo() {
     timezone: getTimezone()
   };
 }
-function onViewportChange(callback: (viewport: { width: number; height: number }) => void) {
+export function onViewportChange(callback: (viewport: { width: number; height: number }) => void) {
   if (typeof window === "undefined") {
     return () => {
     };

@@ -1,6 +1,5 @@
-
 // src/web/network.ts
-function createFetchNetworkAdapter() {
+export function createFetchNetworkAdapter() {
   return {
     async isConnected() {
       return true;
