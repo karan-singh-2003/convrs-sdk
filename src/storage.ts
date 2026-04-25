@@ -8,8 +8,8 @@ const SESSION_START_KEY = "_atk_start";
 // cookie TTL (days)
 const COOKIE_KEYS: Record<string, number> = {
   [VISITOR_KEY]: 365,
-  [SESSION_KEY]: 1 / 48,        // 30 minutes
-  [SESSION_START_KEY]: 1 / 48,  // 30 minutes
+  [SESSION_KEY]: 2/24,        // 30 minutes
+  [SESSION_START_KEY]: 2/24,  // 30 minutes
 };
 
 function isCookieKey(key: string): boolean {
