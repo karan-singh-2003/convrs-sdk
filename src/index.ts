@@ -1,13 +1,10 @@
-import { DataFastClient } from "./client";
-import { EventQueue } from "./queue";
-import { buildScreenHref, buildUserAgent, buildWebPageHref, extractAdClickIds, generateEventId, generateSessionId, generateVisitorId, isValidVisitorId, isValidSessionId, isValidEventName, isSessionExpired, sanitizeCustomProperties } from "./utils";
+
 import { createCookielessWebStorageAdapter, createHybridStorageAdapter, createLocalStorageAdapter, createMemoryStorageAdapter } from "./storage";
 import { createFetchNetworkAdapter } from "./network";
 import { getDeviceInfo } from "./device";
-import { getCookie, setCookie, deleteCookie } from "./cookies";
+import {  setCookie, } from "./cookies";
 import { onViewportChange } from "./device";
 import { isLikelyBot, isInIframe, isLocalhostHostname, isFileProtocol } from "./bot";
-import { createLogger } from "./utils";
 import { createDataFastClient, getDataFastClient } from "./client";
 import { createNoopClient } from "./noop";
 
@@ -108,7 +105,7 @@ function cleanCrossDomainParams() {
   } catch {
   }
 }
-export async function initDataFast(config: any) {
+async function initDataFast(config: any) {
   const debug = config.debug ?? false;
   if (isLikelyBot()) {
     return createNoopClient("bot detected", debug);
@@ -237,38 +234,14 @@ var dataFastWeb = {
 };
 var web_default = dataFastWeb;
 
-exports.DataFastClient = DataFastClient;
-exports.EventQueue = EventQueue;
-exports.buildScreenHref = buildScreenHref;
-exports.buildUserAgent = buildUserAgent;
-exports.buildWebPageHref = buildWebPageHref;
-exports.createCookielessWebStorageAdapter = createCookielessWebStorageAdapter;
-exports.createDataFastClient = createDataFastClient;
-exports.createDataFastWeb = createDataFastWeb;
-exports.createDataFastWithAdapters = createDataFastWithAdapters;
-exports.createFetchNetworkAdapter = createFetchNetworkAdapter;
-exports.createHybridStorageAdapter = createHybridStorageAdapter;
-exports.createLocalStorageAdapter = createLocalStorageAdapter;
-exports.createLogger = createLogger;
-exports.createMemoryStorageAdapter = createMemoryStorageAdapter;
-exports.default = web_default;
-exports.deleteCookie = deleteCookie;
-exports.extractAdClickIds = extractAdClickIds;
-exports.generateEventId = generateEventId;
-exports.generateSessionId = generateSessionId;
-exports.generateVisitorId = generateVisitorId;
-exports.getCookie = getCookie;
-exports.getDataFastClient = getDataFastClient;
-exports.getDeviceInfo = getDeviceInfo;
-exports.initDataFast = initDataFast;
-exports.isFileProtocol = isFileProtocol;
-exports.isInIframe = isInIframe;
-exports.isLikelyBot = isLikelyBot;
-exports.isLocalhostHostname = isLocalhostHostname;
-exports.isSessionExpired = isSessionExpired;
-exports.isValidEventName = isValidEventName;
-exports.isValidSessionId = isValidSessionId;
-exports.isValidVisitorId = isValidVisitorId;
-exports.onViewportChange = onViewportChange;
-exports.sanitizeCustomProperties = sanitizeCustomProperties;
-exports.setCookie = setCookie;
+export * from "./client";
+export * from "./queue";
+export * from "./utils";
+export * from "./storage";
+export * from "./device";
+export * from "./cookies";
+export * from "./bot";
+export * from "./noop";
+export * from "./network";
+
+export { initDataFast };
