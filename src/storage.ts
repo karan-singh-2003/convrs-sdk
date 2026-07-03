@@ -1,9 +1,9 @@
 // src/web/storage.ts
 import { getCookie, setCookie, deleteCookie } from "./cookies";
 
-const SESSION_KEY = "_atk_sid";
-const VISITOR_KEY = "_atk_vid";
-const SESSION_START_KEY = "_atk_start";
+const SESSION_KEY = "_cv_sid";
+const VISITOR_KEY = "_cv_vid";
+const SESSION_START_KEY = "_cv_start";
 
 // cookie TTL (days)
 const COOKIE_KEYS: Record<string, number> = {
@@ -32,7 +32,7 @@ export function createLocalStorageAdapter() {
       try {
         return localStorage.getItem(key);
       } catch (error) {
-        console.warn("[DataFast] localStorage.getItem failed:", error);
+        console.warn("[Convrs] localStorage.getItem failed:", error);
         return null;
       }
     },
@@ -40,14 +40,14 @@ export function createLocalStorageAdapter() {
       try {
         localStorage.setItem(key, value);
       } catch (error) {
-        console.warn("[DataFast] localStorage.setItem failed:", error);
+        console.warn("[Convrs] localStorage.setItem failed:", error);
       }
     },
     async removeItem(key: string) {
       try {
         localStorage.removeItem(key);
       } catch (error) {
-        console.warn("[DataFast] localStorage.removeItem failed:", error);
+        console.warn("[Convrs] localStorage.removeItem failed:", error);
       }
     },
   };

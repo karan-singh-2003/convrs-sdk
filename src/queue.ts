@@ -1,7 +1,7 @@
 // src/eventQueue.ts
 import { generateEventId } from "./utils";
 
-const QUEUE_STORAGE_KEY = "datafast_event_queue";
+const QUEUE_STORAGE_KEY = "convrs_event_queue";
 const MAX_RETRIES = 3;
 
 export class EventQueue {

@@ -16,13 +16,14 @@ import {
 } from "./utils";
 
 const SDK_VERSION = "1.0.0";
-const DEFAULT_API_URL = "http://localhost:3000/api/track";
+const DEFAULT_API_URL = "https://app.convrs.dev/api/track";
 
 const STORAGE_KEYS = {
-  VISITOR_ID: "_atk_vid",
-  SESSION_ID: "_atk_sid",
-  SESSION_START: "_atk_start",
-  IGNORE_TRACKING: "datafast_ignore",
+  VISITOR_ID: "_cv_vid",
+  SESSION_ID: "_cv_sid",
+  SESSION_START: "_cv_start",
+  ENTRY_PAGE: "_cv_entry",   // ← add
+  IGNORE_TRACKING: "convrs_ignore",
 };
 
 function computeOrigin(config: any): string | undefined {
@@ -47,7 +48,7 @@ function computeOrigin(config: any): string | undefined {
   return `${protocol}://${domain}`;
 }
 
-export class DataFastClient {
+export class ConvrsClient {
   private state: any;
   private queue: EventQueue | null;
   private logger: any;
@@ -74,10 +75,10 @@ export class DataFastClient {
       return;
     }
 
-    if (!config.appId) throw new Error("[DataFast] appId is required");
-    if (!config.domain) throw new Error("[DataFast] domain is required");
-    if (!config.storage) throw new Error("[DataFast] storage adapter is required");
-    if (!config.platform) throw new Error("[DataFast] platform is required");
+    if (!config.appId) throw new Error("[Convrs] appId is required");
+    if (!config.domain) throw new Error("[Convrs] domain is required");
+    if (!config.storage) throw new Error("[Convrs] storage adapter is required");
+    if (!config.platform) throw new Error("[Convrs] platform is required");
 
     this.state.config = config;
     this.logger = createLogger(config.debug ?? false);
@@ -150,7 +151,6 @@ export class DataFastClient {
     }
 
     let referrer: string | null = null;
-
     if (this.state.lastScreenName) {
       referrer =
         config.platform === "web"
@@ -165,6 +165,10 @@ export class DataFastClient {
     }
 
     payload.referrer = referrer;
+
+    // ── Entry page ─────────────────────────────────────────────────────────
+    payload.entrypage = await this.getOrSetEntryPage(payload.href);
+
     await this.queue!.enqueue(payload);
 
     this.state.lastScreenName = screenName;
@@ -172,7 +176,22 @@ export class DataFastClient {
     this.state.lastPageviewTime = Date.now();
     this.logger.log("Screen tracked:", screenName);
   }
+  async trackExitLink(url: string) {
+    if (!this.isReady()) return;
 
+    if (!url || typeof url !== "string") {
+      this.logger.warn("trackExitLink requires a URL");
+      return;
+    }
+
+    const screenName = this.state.lastScreenName ?? "Unknown";
+    const payload = this.buildBasePayload("exitlink", screenName);
+    payload.exitlink = url;
+    payload.entrypage = await this.getOrSetEntryPage(payload.href);
+
+    await this.queue!.enqueue(payload);
+    this.logger.log("Exit link tracked:", url);
+  }
   async track(eventName: string, properties?: Record<string, any>) {
     if (!this.isReady()) return;
 
@@ -405,12 +424,28 @@ export class DataFastClient {
       const now = Date.now();
       await config.storage.setItem(STORAGE_KEYS.SESSION_ID, sessionId);
       await config.storage.setItem(STORAGE_KEYS.SESSION_START, now.toString());
+      await config.storage.removeItem(STORAGE_KEYS.ENTRY_PAGE); // ← reset entry page on new session
       this.state.sessionStartTime = now;
     } else {
       this.state.sessionStartTime = sessionStart;
     }
 
     this.state.sessionId = sessionId;
+  }
+
+
+  private async getOrSetEntryPage(href: string): Promise<string> {
+    const stored = await this.state.config.storage.getItem(STORAGE_KEYS.ENTRY_PAGE);
+    if (stored) return stored;
+    // First pageview of this session — this IS the entry page
+    try {
+      const path = new URL(href).pathname;
+      await this.state.config.storage.setItem(STORAGE_KEYS.ENTRY_PAGE, path);
+      return path;
+    } catch {
+      await this.state.config.storage.setItem(STORAGE_KEYS.ENTRY_PAGE, href);
+      return href;
+    }
   }
 
   private async onEventSendSuccess(parsedBody: any) {
@@ -425,22 +460,19 @@ export class DataFastClient {
     this.state.config.onCookielessVisitorId?.(vid);
     this.logger.log("Cookieless visitor id from server", vid);
   }
-// src/core/client.ts — add this public method
-async reloadSession() {
-  if (!this.state.config) return;
-  // Re-reads visitor and session from storage (cookies already updated externally)
-  // Does NOT generate new IDs — just syncs in-memory state from storage
-  await this.initVisitorId();
-  await this.initSessionId();
-  // Reset page dedup so /success pageview isn't throttled
-  this.state.lastScreenName = null;
-  this.state.lastPageviewUrl = null;
-  this.state.lastPageviewTime = null;
-  this.logger.log("Session reloaded from storage:", {
-    visitorId: this.state.visitorId,
-    sessionId: this.state.sessionId,
-  });
-}
+  // src/core/client.ts — add this public method
+  async reloadSession() {
+    if (!this.state.config) return;
+    await this.initVisitorId();
+    await this.initSessionId();
+    this.state.lastScreenName = null;
+    this.state.lastPageviewUrl = null;
+    this.state.lastPageviewTime = null;
+    this.logger.log("Session reloaded from storage:", {
+      visitorId: this.state.visitorId,
+      sessionId: this.state.sessionId,
+    });
+  }
   private buildBasePayload(type: string, screenName: string, hrefOverride?: string): any {
     const config = this.state.config;
     const deviceInfo = this.state.deviceInfo;
@@ -457,7 +489,7 @@ async reloadSession() {
     const payload: any = {
       websiteId: config.appId,
       domain: config.domain,
-      // ✅ Fixed: use stored visitorId, not a new random one each time
+      //  Fixed: use stored visitorId, not a new random one each time
       visitorId: this.state.visitorId ?? null,
       sessionId: this.state.sessionId,
       href,
@@ -480,14 +512,14 @@ async reloadSession() {
   }
 }
 
-let instance: DataFastClient | null = null;
+let instance: ConvrsClient | null = null;
 
-export function getDataFastClient(): DataFastClient {
-  if (!instance) instance = new DataFastClient();
+export function getConvrsClient(): ConvrsClient {
+  if (!instance) instance = new ConvrsClient();
   return instance;
 }
 
-export function createDataFastClient(): DataFastClient {
-  return new DataFastClient();
+export function createConvrsClient(): ConvrsClient {
+  return new ConvrsClient();
 }
 

@@ -1,7 +1,7 @@
 {
-  "name": "@karanbuilds/analytics-sdk",
-  "version": "1.0.17",
-  "description": "Analytics SDK (Web)",
+  "name": "@convrs/sdk",
+  "version": "1.0.21",
+  "description": "Convrs SDK (Web)",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

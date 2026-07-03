@@ -2,7 +2,7 @@
 const noop = async (): Promise<void> => {};
 export function createNoopClient(reason: string, debug?: boolean) {
   if (debug) {
-    console.warn(`[DataFast] Tracking disabled: ${reason}`);
+    console.warn(`[Convrs] Tracking disabled: ${reason}`);
   }
   return {
     init: noop,
@@ -24,7 +24,7 @@ export function createNoopClient(reason: string, debug?: boolean) {
     getSessionId: () => null,
     isCookieless: () => false,
     isInitialized: () => false,
-    getTrackingParams: () => ({ _df_vid: "", _df_sid: "" }),
+    getTrackingParams: () => ({ _convrs_vid: "", _convrs_sid: "" }),
     buildCrossDomainUrl: (url: string) => url
   };
 }

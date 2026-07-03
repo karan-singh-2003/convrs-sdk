@@ -32,7 +32,7 @@ export function buildScreenHref(platform: string, screenName: string, domain?: s
     const protocol = domain === "localhost" || domain.startsWith("127.") ? "http" : "https";
     return `${protocol}://${domain}/__app/${platform}/${normalizedName}`;
   }
-  return `datafast://${platform}/${normalizedName}`;
+  return `convrs://${platform}/${normalizedName}`;
 }
 
 export function buildWebPageHref(domain: string, path: string): string {
@@ -50,12 +50,12 @@ export function buildUserAgent(
 ): string {
   if (platform === "ios") {
     const osVer = osVersion.replace(/\./g, "_");
-    return `Mozilla/5.0 (iPhone; CPU iPhone OS ${osVer} like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) DataFast/${sdkVersion} Mobile`;
+    return `Mozilla/5.0 (iPhone; CPU iPhone OS ${osVer} like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Convrs/${sdkVersion} Mobile`;
   }
   if (platform === "android") {
     return `Mozilla/5.0 (Linux; Android ${osVersion}; ${deviceModel}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36`;
   }
-  return `Mozilla/5.0 (compatible; DataFast/${sdkVersion})`;
+  return `Mozilla/5.0 (compatible; Convrs/${sdkVersion})`;
 }
 
 export function isValidEventName(name: string): boolean {
@@ -75,20 +75,20 @@ export function sanitizeCustomProperties(
   const entries = Object.entries(properties);
 
   if (entries.length > 10) {
-    console.warn("[DataFast] Maximum 10 custom properties allowed");
+    console.warn("[Convrs] Maximum 10 custom properties allowed");
     return null;
   }
 
   for (const [key, value] of entries) {
     if (key === "eventName") continue;
 
-    if (!key || typeof key !== "string" || key.length > 64) {
-      console.warn(`[DataFast] Invalid property name: ${key}`);
+      if (!key || typeof key !== "string" || key.length > 64) {
+      console.warn(`[Convrs] Invalid property name: ${key}`);
       return null;
     }
 
     if (!/^[a-z0-9_-]+$/i.test(key)) {
-      console.warn(`[DataFast] Property name must be alphanumeric with _ or -: ${key}`);
+      console.warn(`[Convrs] Property name must be alphanumeric with _ or -: ${key}`);
       return null;
     }
 
@@ -138,9 +138,9 @@ export function extractAdClickIds(href: string): Record<string, string> | undefi
 }
 
 export function createLogger(debug: boolean) {
-  return {
-    log: (...args: any[]) => { if (debug) console.log("[DataFast]", ...args); },
-    warn: (...args: any[]) => { if (debug) console.warn("[DataFast]", ...args); },
-    error: (...args: any[]) => { console.error("[DataFast]", ...args); },
+    return {
+    log: (...args: any[]) => { if (debug) console.log("[Convrs]", ...args); },
+    warn: (...args: any[]) => { if (debug) console.warn("[Convrs]", ...args); },
+    error: (...args: any[]) => { console.error("[Convrs]", ...args); },
   };
 }
